@@ -1,0 +1,1032 @@
+<!doctype html>
+<!--
+  Direction B. The template lives in the LearnWise setup shell.
+  Prototype tabs sit above it so a reviewer can jump.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LearnWise — Template</title>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" />
+    <link rel="stylesheet" href="node_modules/@astryxdesign/core/src/reset.css" />
+    <link rel="stylesheet" href="node_modules/@astryxdesign/core/dist/astryx.css" />
+    <link rel="stylesheet" href="src/themes/learnwise/learnwise.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.2.0",
+          "react/jsx-runtime": "https://esm.sh/react@19.2.0/jsx-runtime",
+          "react-dom": "https://esm.sh/react-dom@19.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@19.2.0/client",
+          "htm": "https://esm.sh/htm@3.1.1",
+          "@astryxdesign/core": "https://esm.sh/@astryxdesign/core@0.7.11?external=react,react-dom"
+        }
+      }
+    </script>
+    <style>
+      html, body, #root { height: 100%; }
+      body {
+        background: var(--color-background-body);
+        color: var(--color-text-primary);
+        font-family: var(--font-family-body);
+      }
+      #root:empty::after {
+        content: "Loading…";
+        display: block;
+        padding: var(--spacing-5);
+        font-family: var(--font-family-body), system-ui, sans-serif;
+      }
+      .gdpr-switch > div:first-child {
+        gap: var(--spacing-4);
+      }
+      .choice-row ul {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: center;
+        gap: var(--spacing-4);
+      }
+      .choice-row li {
+        width: auto;
+        flex: 0 0 auto;
+      }
+      .page-scroll {
+        padding-bottom: calc(var(--spacing-12) + var(--spacing-10));
+      }
+      .page-scroll:has(.screen-fill) {
+        padding-bottom: 0;
+      }
+      .screen-fill {
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: calc(var(--spacing-12) + var(--spacing-10));
+      }
+      .action-footer {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 2;
+        background: var(--color-background-card);
+        border-top: 1px solid var(--color-border);
+      }
+      .speaking-mic {
+        transform-origin: center;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .speaking-mic {
+          animation: speaking-pulse 1s cubic-bezier(0.2, 0, 0, 1) infinite;
+        }
+      }
+      @keyframes speaking-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.18); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import * as React from "react";
+      import {createRoot} from "react-dom/client";
+      import htm from "htm";
+      import {
+        Theme,
+        AppShell,
+        SideNav, SideNavHeading, SideNavSection, SideNavItem,
+        VStack, HStack, StackItem,
+        Heading, Text, Button, Icon,
+        Card,
+        TabList, Tab,
+        FormLayout, TextInput, NumberInput, TextArea, Slider,
+        CheckboxList, CheckboxListItem,
+        Switch,
+        Banner, Badge,
+        ChatLayout, ChatMessageList,
+        ChatMessage, ChatMessageBubble, ChatComposer,
+        RadioList, RadioListItem,
+        CheckboxInput,
+        Divider,
+        List, ListItem,
+        Dialog, DialogHeader,
+        Layout, LayoutContent, LayoutFooter,
+      } from "@astryxdesign/core";
+
+      const h = htm.bind(React.createElement);
+      const theme = {name: "learnwise", __built: true};
+      const narrow = "calc(var(--spacing-12) * 12)";
+      const measure = "65ch";
+      const plurals = new Intl.PluralRules("en");
+
+      const MISHEAR = "When did the shortness of bread start?";
+      const ONSET = "When did the shortness of breath start?";
+      const REPLY = "Three days ago.";
+      const BRIEF_REST = "Anxious and hard of hearing.";
+      const HISTORY_BRIEF = "Take a history from Mrs Jansen, 68, admitted with shortness of breath. She is anxious and hard of hearing.";
+      const SPOKEN_REASON = "A history is a conversation. A written attempt shows the writing.";
+      const TYPING_REASON = "Precise writing is graded from the words. Typing is the record they finish.";
+      const GUARDRAILS = "Keep replies short, because Mrs Jansen is hard of hearing. Speech becomes text, and the recording is deleted once the transcript exists. A typed attempt is a full way to finish. Do not score tone or timing when the attempt has no spoken turns.";
+      const DRAFT = "She names the symptom and when it started, then confirms it was three days ago. A 12s silence is noted on the onset question, and it is her pause. The recording was deleted. Tone of voice is not in this record.";
+      const CONVERSATION = [
+        {id: "t1-student", name: "Student", sender: "user", text: "What brought you in today?"},
+        {id: "t1-patient", name: "Mrs Jansen", sender: "assistant", text: "I can't catch my breath."},
+        {id: "t2-student", name: "Student", sender: "user", text: ONSET, note: "12s silence", hold: 2200},
+        {id: "t2-patient", name: "Mrs Jansen", sender: "assistant", text: REPLY},
+        {id: "t3-student", name: "Student", sender: "user", text: "So this started three days ago."},
+        {id: "t3-patient", name: "Mrs Jansen", sender: "assistant", text: "Yes."},
+      ];
+      const chatColumn = {width: "100%", maxWidth: "calc(var(--spacing-12) * 16)", marginInline: "auto"};
+      const KNOWLEDGE_SOURCES = [
+        {value: "course", label: "Course content"},
+        {value: "lectures", label: "Lectures"},
+        {value: "readings", label: "Readings"},
+        {value: "brief", label: "Assignment brief"},
+      ];
+
+      const initial = {
+        role: "admin",
+        studentState: "start",
+        templateName: "Nursing history",
+        templateDescription: HISTORY_BRIEF,
+        lockedTitle: true,
+        lockedDescription: true,
+        lockedGuardrails: true,
+        modes: ["typing", "speaking"],
+        speaking: true,
+        knowledgeSources: KNOWLEDGE_SOURCES.map((source) => source.value),
+        processor: "",
+        where: "",
+        howLong: "",
+        minuteCap: null,
+        turns: 12,
+        turnsRange: [1, 20],
+        attemptsAllowed: 2,
+        attemptsRange: [1, 5],
+        gdprConsent: false,
+        guardrails: GUARDRAILS,
+        skill: "spoken",
+        defaultMode: "typing",
+        previewMode: "spoken",
+        published: false,
+        entry: "spoken",
+        preferredMode: "",
+        gdprAccepted: false,
+        transcript: [],
+        speakingId: "",
+        voiceSlow: false,
+        textFromHere: false,
+        transcriptDone: false,
+        attemptNumber: 1,
+        composer: "mic",
+        studentLine: MISHEAR,
+        lineEdited: false,
+        correcting: false,
+        draft: "",
+        extraLines: [],
+        submitted: false,
+        attempt: "spoken",
+        comment: DRAFT,
+        score: 3,
+        gradeNote: "",
+        speakingNote: "",
+        publishNote: "",
+        submitNote: "",
+        saveNote: "",
+        courseSaveNote: "",
+        previewOpen: false,
+      };
+
+      function clampInRange(value, range) {
+        return Math.min(range[1], Math.max(range[0], value));
+      }
+
+      function setRangeEnd(range, end, next) {
+        if (typeof next !== "number") return range;
+        const value = Math.max(1, next);
+        if (end === "min") return value <= range[1] ? [value, range[1]] : [value, value];
+        return value >= range[0] ? [range[0], value] : [value, value];
+      }
+
+      function estimatedCostLabel(voiceOn) {
+        const dollars = voiceOn ? 1 : 0.5;
+        const formatted = new Intl.NumberFormat("en", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(dollars);
+        return "estimated cost: " + formatted + "$/participant";
+      }
+
+      function countPhrase(count, singular, plural) {
+        const word = plurals.select(count) === "one" ? singular : plural;
+        return count + " " + word;
+      }
+
+      function limitsLine(state) {
+        return countPhrase(state.turns, "turn", "turns")
+          + ", "
+          + countPhrase(state.attemptsAllowed, "attempt", "attempts")
+          + ". "
+          + BRIEF_REST;
+      }
+
+      function playReply() {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(REPLY));
+      }
+
+      function PageTitle({children}) {
+        return h`<${Heading} id="page-title" level=${1} tabIndex=${-1} textWrap="balance">${children}</${Heading}>`;
+      }
+
+      function PrototypeBar({state, patch}) {
+        return h`<${VStack} gap=${3} padding=${4}>
+          <${VStack} gap=${1}>
+            <${Text} type="label" color="secondary">Prototype</${Text}>
+            <${TabList}
+              aria-label="Prototype"
+              role="tablist"
+              value=${state.role}
+              onChange=${(role) => patch({role, previewOpen: false})}
+            >
+              <${Tab} value="admin" label="Admin" />
+              <${Tab} value="instructor" label="Instructor" />
+              <${Tab} value="student" label="Student" />
+              <${Tab} value="grading" label="Grading" />
+            </${TabList}>
+          </${VStack}>
+        </${VStack}>`;
+      }
+
+      function SetupNav({state, patch}) {
+        return h`<${SideNav} header=${h`<${SideNavHeading} heading="LearnWise" />`}>
+          <${SideNavSection} title="Setup">
+            <${SideNavItem}
+              label="Templates"
+              isSelected=${state.role === "admin"}
+              onClick=${() => patch({role: "admin"})}
+            />
+          </${SideNavSection}>
+        </${SideNav}>`;
+      }
+
+      function FieldWithLock({label, lockLabel, locked, onLock, control}) {
+        return h`<${VStack} gap=${2}>
+          <${HStack} align="center" justify="between">
+            <${Text} type="label">${label}</${Text}>
+            <${Switch}
+              label=${lockLabel}
+              labelPosition="start"
+              size="sm"
+              value=${locked}
+              onChange=${onLock}
+            />
+          </${HStack}>
+          ${control}
+        </${VStack}>`;
+      }
+
+      function Admin({state, patch}) {
+        function edit(partial) {
+          patch({...partial, saveNote: ""});
+        }
+        return h`<${VStack} gap=${5}>
+          <${PageTitle}>New Template</${PageTitle}>
+          <${FormLayout}>
+              <${FieldWithLock}
+                label="Template title"
+                lockLabel="Lock title"
+                locked=${state.lockedTitle}
+                onLock=${(lockedTitle) => edit({lockedTitle})}
+                control=${h`<${TextInput}
+                  label="Template title"
+                  isLabelHidden=${true}
+                  value=${state.templateName}
+                  onChange=${(templateName) => edit({templateName})}
+                />`}
+              />
+              <${FieldWithLock}
+                label="Template description"
+                lockLabel="Lock description"
+                locked=${state.lockedDescription}
+                onLock=${(lockedDescription) => edit({lockedDescription})}
+                control=${h`<${TextInput}
+                  label="Template description"
+                  isLabelHidden=${true}
+                  value=${state.templateDescription}
+                  onChange=${(templateDescription) => edit({templateDescription})}
+                />`}
+              />
+              <${FieldWithLock}
+                label="Guardrails"
+                lockLabel="Lock guardrails"
+                locked=${state.lockedGuardrails}
+                onLock=${(lockedGuardrails) => edit({lockedGuardrails})}
+                control=${h`<${TextArea}
+                  label="Guardrails"
+                  isLabelHidden=${true}
+                  value=${state.guardrails}
+                  onChange=${(guardrails) => edit({guardrails})}
+                />`}
+              />
+              <${FormLayout} direction="horizontal" style=${{alignItems: "start", columnGap: "var(--spacing-10)"}}>
+                <${VStack} gap=${2}>
+                  <${Text} type="label">Max number of attempts</${Text}>
+                  <${FormLayout} direction="horizontal">
+                    <${NumberInput}
+                      label="Minimum attempts"
+                      value=${state.attemptsRange[0]}
+                      min=${1}
+                      isIntegerOnly=${true}
+                      onChange=${(next) => {
+                        const attemptsRange = setRangeEnd(state.attemptsRange, "min", next);
+                        edit({
+                          attemptsRange,
+                          attemptsAllowed: clampInRange(state.attemptsAllowed, attemptsRange),
+                        });
+                      }}
+                    />
+                    <${NumberInput}
+                      label="Maximum attempts"
+                      value=${state.attemptsRange[1]}
+                      min=${1}
+                      isIntegerOnly=${true}
+                      onChange=${(next) => {
+                        const attemptsRange = setRangeEnd(state.attemptsRange, "max", next);
+                        edit({
+                          attemptsRange,
+                          attemptsAllowed: clampInRange(state.attemptsAllowed, attemptsRange),
+                        });
+                      }}
+                    />
+                  </${FormLayout}>
+                  <${HStack}>
+                    <${Badge} variant="blue" label=${estimatedCostLabel(state.speaking)} />
+                  </${HStack}>
+                </${VStack}>
+                <${VStack} gap=${2}>
+                  <${Text} type="label">Max number of turns</${Text}>
+                  <${FormLayout} direction="horizontal">
+                    <${NumberInput}
+                      label="Minimum turns"
+                      value=${state.turnsRange[0]}
+                      min=${1}
+                      isIntegerOnly=${true}
+                      onChange=${(next) => {
+                        const turnsRange = setRangeEnd(state.turnsRange, "min", next);
+                        edit({
+                          turnsRange,
+                          turns: clampInRange(state.turns, turnsRange),
+                        });
+                      }}
+                    />
+                    <${NumberInput}
+                      label="Maximum turns"
+                      value=${state.turnsRange[1]}
+                      min=${1}
+                      isIntegerOnly=${true}
+                      onChange=${(next) => {
+                        const turnsRange = setRangeEnd(state.turnsRange, "max", next);
+                        edit({
+                          turnsRange,
+                          turns: clampInRange(state.turns, turnsRange),
+                        });
+                      }}
+                    />
+                  </${FormLayout}>
+                </${VStack}>
+              </${FormLayout}>
+              <${CheckboxList}
+                containerClassName="choice-row"
+                label="Supported modes"
+                density="compact"
+                value=${state.modes}
+                onChange=${(modes) => {
+                  const next = modes.includes("typing") ? modes : ["typing", ...modes];
+                  edit({
+                    modes: next,
+                    speaking: next.includes("speaking"),
+                    speakingNote: next.includes("speaking")
+                      ? "Speaking is on for this template."
+                      : "Speaking is off for this template.",
+                    defaultMode: next.includes("speaking") ? state.defaultMode : "typing",
+                  });
+                }}
+              >
+                <${CheckboxListItem} label="Text" value="typing" isDisabled=${true} style=${{backgroundColor: "transparent"}} />
+                <${CheckboxListItem} label="Voice" value="speaking" style=${{backgroundColor: "transparent"}} />
+              </${CheckboxList}>
+              <${CheckboxList}
+                containerClassName="choice-row"
+                label="Knowledge sources"
+                density="compact"
+                value=${state.knowledgeSources}
+                onChange=${(knowledgeSources) => edit({knowledgeSources})}
+              >
+                ${KNOWLEDGE_SOURCES.map((source) => h`<${CheckboxListItem}
+                  key=${source.value}
+                  label=${source.label}
+                  value=${source.value}
+                  style=${{backgroundColor: "transparent"}}
+                />`)}
+              </${CheckboxList}>
+              <${Switch}
+                className="gdpr-switch"
+                label="Ask for GDPR consent to process personal information"
+                labelPosition="start"
+                value=${state.gdprConsent}
+                onChange=${(gdprConsent) => edit({gdprConsent})}
+              />
+          </${FormLayout}>
+        </${VStack}>`;
+      }
+
+      function Exchange({state, patch, mode, live, reduced}) {
+        const spoken = mode === "spoken";
+        const line = live ? state.studentLine : MISHEAR;
+        return h`<${VStack} gap=${reduced ? 2 : 3}>
+          <${ChatMessage} sender="user" density=${reduced ? "compact" : "balanced"}>
+            <${ChatMessageBubble}
+              name="Student"
+              variant=${spoken ? "filled" : "ghost"}
+              metadata=${live
+                ? (state.correcting
+                  ? h`<${Button} label="Done" variant="secondary" size="sm" onClick=${() => patch({correcting: false})} />`
+                  : h`<${Button} label="Correct this line" variant="secondary" size="sm" onClick=${() => patch({correcting: true})} />`)
+                : null}
+            >
+              <${VStack} gap=${1}>
+                ${live && state.correcting
+                  ? h`<${TextInput}
+                      label="Correct this line"
+                      value=${state.studentLine}
+                      onChange=${(studentLine) => patch({studentLine, lineEdited: true})}
+                    />`
+                  : h`<${Text} size=${reduced ? "sm" : "base"} textWrap="pretty">${line}</${Text}>`}
+                ${spoken ? h`<${Text} type="supporting">12s silence</${Text}>` : null}
+              </${VStack}>
+            </${ChatMessageBubble}>
+          </${ChatMessage}>
+          <${ChatMessage} sender="assistant" density=${reduced ? "compact" : "balanced"}>
+            <${ChatMessageBubble}
+              name="Mrs Jansen"
+              variant=${spoken ? "filled" : "ghost"}
+              metadata=${live && spoken
+                ? h`<${Button} label="Play reply" variant="ghost" size="sm" onClick=${playReply} />`
+                : null}
+            >
+              <${Text} size=${reduced ? "sm" : "base"}>${REPLY}</${Text}>
+            </${ChatMessageBubble}>
+          </${ChatMessage}>
+          ${live && state.extraLines.map((text, index) => h`<${ChatMessage} key=${index} sender="user">
+            <${ChatMessageBubble} name="Student" variant="ghost">
+              <${Text} textWrap="pretty">${text}</${Text}>
+            </${ChatMessageBubble}>
+          </${ChatMessage}>`)}
+        </${VStack}>`;
+      }
+
+      function Instructor({state, patch}) {
+        function edit(partial) {
+          patch({...partial, courseSaveNote: ""});
+        }
+        return h`<${VStack} gap=${5}>
+          <${PageTitle}>Customize Nursing Template for your assignment</${PageTitle}>
+          <${FormLayout}>
+            <${TextInput}
+              label="Template title"
+              value=${state.templateName}
+              isDisabled=${true}
+            />
+            <${TextInput}
+              label="Template description"
+              value=${state.templateDescription}
+              isDisabled=${true}
+            />
+            <${TextArea}
+              label="Guardrails"
+              value=${state.guardrails}
+              isDisabled=${true}
+            />
+            <${FormLayout} direction="horizontal" style=${{alignItems: "start", columnGap: "calc(var(--spacing-10) * 2)"}}>
+              <${Slider}
+                label="Max number of attempts"
+                value=${state.attemptsAllowed}
+                min=${state.attemptsRange[0]}
+                max=${state.attemptsRange[1]}
+                step=${1}
+                valueDisplay="text"
+                onChange=${(next) => edit({attemptsAllowed: clampInRange(next, state.attemptsRange)})}
+              />
+              <${Slider}
+                label="Max number of turns"
+                value=${state.turns}
+                min=${state.turnsRange[0]}
+                max=${state.turnsRange[1]}
+                step=${1}
+                valueDisplay="text"
+                onChange=${(next) => edit({turns: clampInRange(next, state.turnsRange)})}
+              />
+            </${FormLayout}>
+            <${CheckboxList}
+              containerClassName="choice-row"
+              label="Supported modes"
+              density="compact"
+              value=${state.modes}
+              onChange=${(modes) => {
+                const next = modes.includes("typing") ? modes : ["typing", ...modes];
+                edit({
+                  modes: next,
+                  speaking: next.includes("speaking"),
+                  speakingNote: next.includes("speaking")
+                    ? "Speaking is on for this template."
+                    : "Speaking is off for this template.",
+                  defaultMode: next.includes("speaking") ? state.defaultMode : "typing",
+                });
+              }}
+            >
+              <${CheckboxListItem} label="Text" value="typing" isDisabled=${true} style=${{backgroundColor: "transparent"}} />
+              <${CheckboxListItem} label="Voice" value="speaking" style=${{backgroundColor: "transparent"}} />
+            </${CheckboxList}>
+            <${CheckboxList}
+              containerClassName="choice-row"
+              label="Knowledge sources"
+              density="compact"
+              value=${state.knowledgeSources}
+              onChange=${(knowledgeSources) => edit({knowledgeSources})}
+            >
+              ${KNOWLEDGE_SOURCES.map((source) => h`<${CheckboxListItem}
+                key=${source.value}
+                label=${source.label}
+                value=${source.value}
+                style=${{backgroundColor: "transparent"}}
+              />`)}
+            </${CheckboxList}>
+          </${FormLayout}>
+        </${VStack}>`;
+      }
+
+      function openTyped(patch) {
+        patch({
+          studentState: "speaking",
+          entry: "typed",
+          composer: "text",
+          correcting: false,
+        });
+      }
+
+      function SpeakingCue({name}) {
+        return h`<${HStack} gap=${3} align="center">
+          <${Icon} className="speaking-mic" icon="microphone" size="lg" color="accent" />
+          <${Text} weight="medium">${name} is speaking</${Text}>
+        </${HStack}>`;
+      }
+
+      function bubbleFill(sender) {
+        return {
+          backgroundColor: sender === "user"
+            ? "var(--color-accent-muted)"
+            : "var(--color-neutral)",
+        };
+      }
+
+      function Student({state, patch}) {
+        const spoken = state.preferredMode === "voice";
+        const started = state.studentState === "started";
+        const speaking = CONVERSATION.find((line) => line.id === state.speakingId);
+        React.useEffect(() => {
+          if (!started || state.transcriptDone || state.voiceSlow) return undefined;
+          let cancelled = false;
+          const timers = [];
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const doneIds = state.textFromHere ? state.transcript.slice() : [];
+          let index = doneIds.length;
+          const asText = !spoken || state.textFromHere;
+          function wait(ms) {
+            return new Promise((resolve) => {
+              timers.push(window.setTimeout(resolve, ms));
+            });
+          }
+          async function run() {
+            while (index < CONVERSATION.length) {
+              if (cancelled) return;
+              const line = CONVERSATION[index];
+              if (!asText && line.id === "t2-patient") {
+                patch({speakingId: line.id});
+                await wait(reduced ? 700 : 4500);
+                if (cancelled) return;
+                patch({speakingId: "", voiceSlow: true});
+                return;
+              }
+              const hold = asText ? (reduced ? 180 : 600) : (reduced ? 350 : (line.hold || 1500));
+              if (!asText) patch({speakingId: line.id});
+              await wait(hold);
+              if (cancelled) return;
+              doneIds.push(line.id);
+              index += 1;
+              patch({transcript: doneIds.slice(), speakingId: ""});
+              await wait(reduced ? 80 : 350);
+            }
+            if (!cancelled) patch({speakingId: "", transcriptDone: true});
+          }
+          run();
+          return () => {
+            cancelled = true;
+            timers.forEach((id) => window.clearTimeout(id));
+          };
+        }, [started, state.transcriptDone, state.attemptNumber, state.textFromHere, state.voiceSlow]);
+        const docked = !started || state.transcriptDone;
+        const composer = h`<${VStack} gap=${2} style=${chatColumn}>
+          <${ChatComposer}
+            isDisabled=${true}
+            elevation="none"
+            placeholder="Message Mrs Jansen"
+            onSubmit=${() => {}}
+          />
+          <${HStack} justify="center">
+            <${Text} type="supporting" color="secondary">Speech becomes text. The recording is deleted once the transcript exists.</${Text}>
+          </${HStack}>
+        </${VStack}>`;
+        return h`<${VStack} className=${docked ? "screen-fill" : ""} height="100%">
+          <${HStack} justify="center" padding=${4}>
+            <${Text} weight="medium">LearnWise</${Text}>
+          </${HStack}>
+          <${Divider} />
+          <${StackItem} size="fill">
+            <${ChatLayout}
+              density="balanced"
+              scrollButton=${null}
+              style=${{height: "100%"}}
+              composer=${composer}
+            >
+              <${ChatMessageList} align="top" style=${chatColumn}>
+                <${ChatMessage} sender="assistant">
+                  <${ChatMessageBubble} variant="ghost" width="100%">
+                    <${VStack} gap=${4}>
+                      <${VStack} gap=${1}>
+                        <${PageTitle}>${state.templateName}</${PageTitle}>
+                        <${Text} textWrap="pretty">${state.templateDescription}</${Text}>
+                      </${VStack}>
+                      ${started ? null : h`<${RadioList}
+                        label="Preferred mode"
+                        orientation="horizontal"
+                        value=${state.preferredMode}
+                        onChange=${(preferredMode) => patch({preferredMode})}
+                      >
+                        <${RadioListItem} value="voice" label="Voice" style=${{backgroundColor: "transparent"}} />
+                        <${RadioListItem} value="chat" label="Chat" style=${{backgroundColor: "transparent"}} />
+                      </${RadioList}>`}
+                      ${started ? null : h`<${CheckboxInput}
+                        label="I accept the processing of my personal information"
+                        value=${state.gdprAccepted}
+                        onChange=${(gdprAccepted) => patch({gdprAccepted})}
+                      />`}
+                    </${VStack}>
+                  </${ChatMessageBubble}>
+                </${ChatMessage}>
+                ${state.transcript.map((id) => {
+                  const line = CONVERSATION.find((item) => item.id === id);
+                  const slowAt = CONVERSATION.findIndex((item) => item.id === "t2-patient");
+                  const lineAt = CONVERSATION.findIndex((item) => item.id === id);
+                  const asText = state.textFromHere ? lineAt >= slowAt : !spoken;
+                  return h`<${ChatMessage} key=${line.id} sender=${line.sender}>
+                    <${ChatMessageBubble} name=${line.name} variant="filled" style=${bubbleFill(line.sender)}>
+                      <${VStack} gap=${1}>
+                        <${Text} textWrap="pretty">${line.text}</${Text}>
+                        ${!asText && line.note ? h`<${Text} type="supporting">${line.note}</${Text}>` : null}
+                      </${VStack}>
+                    </${ChatMessageBubble}>
+                  </${ChatMessage}>`;
+                })}
+                ${state.voiceSlow ? h`<${ChatMessage} key="voice-slow" sender="assistant">
+                  <${ChatMessageBubble} name="Mrs Jansen" variant="filled" style=${bubbleFill("assistant")}>
+                    <${VStack} gap=${3} align="start">
+                      <${Text}>Voice takes too long to generate...</${Text}>
+                      <${Button}
+                        label="Switch to text"
+                        variant="primary"
+                        onClick=${() => patch({voiceSlow: false, textFromHere: true, speakingId: ""})}
+                      />
+                    </${VStack}>
+                  </${ChatMessageBubble}>
+                </${ChatMessage}>` : null}
+                ${speaking && !state.voiceSlow ? h`<${ChatMessage} key="speaking" sender=${speaking.sender}>
+                  <${ChatMessageBubble} name=${speaking.name} variant="filled" style=${bubbleFill(speaking.sender)}>
+                    <${SpeakingCue} name=${speaking.name} />
+                  </${ChatMessageBubble}>
+                </${ChatMessage}>` : null}
+              </${ChatMessageList}>
+            </${ChatLayout}>
+          </${StackItem}>
+        </${VStack}>`;
+      }
+
+      function gradeRows(state) {
+        const spoken = state.attempt === "spoken";
+        const tag = spoken ? "Spoken" : "Typed";
+        const onset = state.lineEdited ? state.studentLine : ONSET;
+        return [
+          {id: "open", who: "Student", tag, text: "What brought you in today?"},
+          {id: "symptom", who: "Mrs Jansen", tag, text: "I can't catch my breath."},
+          {id: "onset", who: "Student", tag, text: onset, note: spoken ? "12s silence" : ""},
+          {id: "when", who: "Mrs Jansen", tag, text: REPLY},
+        ];
+      }
+
+      function PreviewDialog({open, onOpenChange, spoken, title, description}) {
+        const [transcript, setTranscript] = React.useState([]);
+        const [speakingId, setSpeakingId] = React.useState("");
+        React.useEffect(() => {
+          if (!open) return undefined;
+          let cancelled = false;
+          const timers = [];
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const doneIds = [];
+          let index = 0;
+          function wait(ms) {
+            return new Promise((resolve) => {
+              timers.push(window.setTimeout(resolve, ms));
+            });
+          }
+          async function run() {
+            setTranscript([]);
+            setSpeakingId("");
+            while (index < CONVERSATION.length) {
+              if (cancelled) return;
+              const line = CONVERSATION[index];
+              const hold = spoken ? (reduced ? 350 : (line.hold || 1500)) : (reduced ? 180 : 600);
+              if (spoken) setSpeakingId(line.id);
+              await wait(hold);
+              if (cancelled) return;
+              doneIds.push(line.id);
+              index += 1;
+              setSpeakingId("");
+              setTranscript(doneIds.slice());
+              await wait(reduced ? 80 : 350);
+            }
+          }
+          run();
+          return () => {
+            cancelled = true;
+            timers.forEach((id) => window.clearTimeout(id));
+          };
+        }, [open, spoken]);
+        const speaking = CONVERSATION.find((line) => line.id === speakingId);
+        return h`<${Dialog}
+          isOpen=${open}
+          purpose="info"
+          width="calc(var(--spacing-12) * 16)"
+          maxHeight="75dvh"
+          style=${{height: "75dvh"}}
+          onOpenChange=${onOpenChange}
+        >
+          <${Layout}
+            height="fill"
+            header=${h`<${DialogHeader}
+              title="Preview"
+              subtitle="A sample attempt"
+              hasDivider=${true}
+              onOpenChange=${onOpenChange}
+            />`}
+            content=${h`<${LayoutContent} label="Sample attempt">
+              <${VStack} gap=${4}>
+                <${VStack} gap=${1}>
+                  <${Heading} level=${3}>${title}</${Heading}>
+                  <${Text} textWrap="pretty">${description}</${Text}>
+                </${VStack}>
+                ${transcript.map((id) => {
+                  const line = CONVERSATION.find((item) => item.id === id);
+                  return h`<${ChatMessage} key=${line.id} sender=${line.sender}>
+                    <${ChatMessageBubble} name=${line.name} variant="filled" style=${bubbleFill(line.sender)}>
+                      <${VStack} gap=${1}>
+                        <${Text} textWrap="pretty">${line.text}</${Text}>
+                        ${spoken && line.note ? h`<${Text} type="supporting">${line.note}</${Text}>` : null}
+                      </${VStack}>
+                    </${ChatMessageBubble}>
+                  </${ChatMessage}>`;
+                })}
+                ${speaking ? h`<${ChatMessage} key="speaking" sender=${speaking.sender}>
+                  <${ChatMessageBubble} name=${speaking.name} variant="filled" style=${bubbleFill(speaking.sender)}>
+                    <${SpeakingCue} name=${speaking.name} />
+                  </${ChatMessageBubble}>
+                </${ChatMessage}>` : null}
+              </${VStack}>
+            </${LayoutContent}>`}
+            footer=${h`<${LayoutFooter} hasDivider=${true}>
+              <${HStack} justify="end">
+                <${Button} label="Close" variant="secondary" onClick=${() => onOpenChange(false)} />
+              </${HStack}>
+            </${LayoutFooter}>`}
+          />
+        </${Dialog}>`;
+      }
+
+      function Grading({state, patch}) {
+        const panelWidth = "calc(var(--spacing-12) * 8)";
+        return h`<${VStack} className="screen-fill" height="100%" padding=${4} gap=${4}>
+          <${PageTitle}>Nursing history</${PageTitle}>
+          <${StackItem} size="fill" isScrollable style=${{minHeight: 0}}>
+            <${HStack} gap=${4} align="stretch" style=${{minHeight: "100%"}}>
+              <${StackItem} size="fill" style=${{display: "flex", flexDirection: "column"}}>
+                <${Card} height="100%" width="100%">
+                  <${VStack} gap=${4}>
+                    <${VStack} gap=${1}>
+                      <${Heading} level=${2}>Transcript</${Heading}>
+                      <${Text} color="secondary">Attempt ${state.attemptNumber} · Spoken. The recording was deleted.</${Text}>
+                    </${VStack}>
+                    ${CONVERSATION.map((line) => h`<${VStack} key=${line.id} gap=${1}>
+                      <${Text} weight="medium">${line.name}</${Text}>
+                      <${Text} textWrap="pretty">${line.text}</${Text}>
+                      ${line.note ? h`<${Text} type="supporting">${line.note}</${Text}>` : null}
+                    </${VStack}>`)}
+                  </${VStack}>
+                </${Card}>
+              </${StackItem}>
+              <${Card} width=${panelWidth}>
+                <${VStack} gap=${4}>
+                  <${VStack} gap=${2}>
+                    <${Heading} level=${2}>Rubric</${Heading}>
+                    <${Text} weight="medium">Nursing history</${Text}>
+                    <${List}>
+                      <${ListItem} label="Symptom" description="She names shortness of breath." endContent=${h`<${Text}>1</${Text}>`} />
+                      <${ListItem} label="Onset" description="She asks when it started. Three days ago." endContent=${h`<${Text}>1</${Text}>`} />
+                      <${ListItem} label="Pause" description="The 12s silence is in the transcript." endContent=${h`<${Text}>1</${Text}>`} />
+                    </${List}>
+                  </${VStack}>
+                  <${HStack} gap=${2} align="end">
+                    <${NumberInput}
+                      label="Overall grade"
+                      value=${state.score}
+                      min=${0}
+                      max=${3}
+                      isIntegerOnly=${true}
+                      width="calc(var(--spacing-12) * 3)"
+                      onChange=${(score) => patch({score, gradeNote: ""})}
+                    />
+                    <${Text} color="secondary">/ 3</${Text}>
+                  </${HStack}>
+                  <${TextArea}
+                    label="Overall feedback"
+                    rows=${6}
+                    value=${state.comment}
+                    onChange=${(comment) => patch({comment, gradeNote: ""})}
+                  />
+                </${VStack}>
+              </${Card}>
+            </${HStack}>
+          </${StackItem}>
+        </${VStack}>`;
+      }
+
+      function ActionFooter({children}) {
+        return h`<${HStack} className="action-footer" gap=${3} align="center" justify="end" padding=${4}>
+          ${children}
+        </${HStack}>`;
+      }
+
+      function App() {
+        const [state, setState] = React.useState(initial);
+        const first = React.useRef(true);
+        function patch(partial) {
+          setState((current) => ({...current, ...partial}));
+        }
+        React.useEffect(() => {
+          const titles = {
+            admin: "New Template — LearnWise",
+            instructor: "Customize Nursing Template — LearnWise",
+            student: "Nursing history — LearnWise",
+            grading: "Nursing history — Grading",
+          };
+          document.title = titles[state.role];
+          if (first.current) {
+            first.current = false;
+            return;
+          }
+          const heading = document.getElementById("page-title");
+          if (heading) heading.focus();
+        }, [state.role, state.studentState]);
+
+        const screen = state.role === "admin"
+          ? h`<${Admin} state=${state} patch=${patch} />`
+          : state.role === "instructor"
+            ? h`<${Instructor} state=${state} patch=${patch} />`
+            : state.role === "student"
+              ? h`<${Student} state=${state} patch=${patch} />`
+              : h`<${Grading} state=${state} patch=${patch} />`;
+        const spoken = state.preferredMode === "voice";
+        const canStart = state.preferredMode !== "" && state.gdprAccepted;
+        const canRetry = state.attemptNumber < state.attemptsAllowed;
+        const studentStarted = state.studentState === "started";
+        const footer = state.role === "admin"
+          ? h`<${ActionFooter}>
+              ${state.saveNote ? h`<${Text} role="status">${state.saveNote}</${Text}>` : null}
+              <${Button} label="Save changes" variant="primary" onClick=${() => patch({saveNote: "Saved."})} />
+            </${ActionFooter}>`
+          : state.role === "instructor"
+            ? h`<${ActionFooter}>
+                ${state.courseSaveNote ? h`<${Text} role="status">${state.courseSaveNote}</${Text}>` : null}
+                <${Button} label="Preview" variant="secondary" onClick=${() => patch({previewOpen: true})} />
+                <${Button} label="Save changes" variant="primary" onClick=${() => patch({courseSaveNote: "Saved."})} />
+              </${ActionFooter}>`
+            : state.role === "grading"
+              ? h`<${ActionFooter}>
+                  ${state.gradeNote ? h`<${Text} role="status">${state.gradeNote}</${Text}>` : null}
+                  <${Button}
+                    label="Publish grading"
+                    variant="primary"
+                    isDisabled=${state.gradeNote === "Published."}
+                    onClick=${() => patch({gradeNote: "Published."})}
+                  />
+                </${ActionFooter}>`
+              : !studentStarted
+                ? h`<${ActionFooter}>
+                    <${Button}
+                      label="Start assignment"
+                      variant="primary"
+                      isDisabled=${!canStart}
+                      onClick=${() => patch({
+                        studentState: "started",
+                        entry: spoken ? "spoken" : "typed",
+                        composer: spoken ? "mic" : "text",
+                        transcript: [],
+                        speakingId: "",
+                        voiceSlow: false,
+                        textFromHere: false,
+                        transcriptDone: false,
+                        attemptNumber: 1,
+                        submitted: false,
+                        submitNote: "",
+                      })}
+                    />
+                  </${ActionFooter}>`
+                : state.transcriptDone
+                  ? h`<${ActionFooter}>
+                      ${state.submitNote ? h`<${Text} role="status">${state.submitNote}</${Text}>` : null}
+                      <${Button}
+                        label="Retry"
+                        variant="secondary"
+                        isDisabled=${!canRetry}
+                        onClick=${() => {
+                          if (!canRetry) return;
+                          patch({
+                            attemptNumber: state.attemptNumber + 1,
+                            transcript: [],
+                            speakingId: "",
+                            voiceSlow: false,
+                            textFromHere: false,
+                            transcriptDone: false,
+                            submitted: false,
+                            submitNote: "",
+                          });
+                        }}
+                      />
+                      <${Button}
+                        label=${"Submit Attempt " + state.attemptNumber + "/" + state.attemptsAllowed}
+                        variant="primary"
+                        isDisabled=${state.submitted}
+                        onClick=${() => patch({
+                          submitted: true,
+                          submitNote: "Submitted.",
+                          attempt: spoken ? "spoken" : "typed",
+                        })}
+                      />
+                    </${ActionFooter}>`
+                  : null;
+        const inSetup = state.role === "admin" || state.role === "instructor";
+        const body = state.role === "student" || state.role === "grading"
+          ? screen
+          : inSetup
+          ? h`<${AppShell}
+              variant="section"
+              contentPadding=${4}
+              height="fill"
+              sideNav=${h`<${SetupNav} state=${state} patch=${patch} />`}
+            >${screen}</${AppShell}>`
+          : h`<${VStack} padding=${4}>${screen}</${VStack}>`;
+
+        return h`<${Theme} theme=${theme} mode="light">
+          <${VStack} height="100%">
+            <${PrototypeBar} state=${state} patch=${patch} />
+            <${StackItem} size="fill" style=${{position: "relative", minHeight: 0}}>
+              <${StackItem} isScrollable aria-label="Page" className=${footer ? "page-scroll" : ""} style=${{height: "100%"}}>
+                ${body}
+              </${StackItem}>
+              ${footer}
+            </${StackItem}>
+          </${VStack}>
+          <${PreviewDialog}
+            open=${state.role === "instructor" && state.previewOpen}
+            spoken=${state.speaking}
+            title=${state.templateName}
+            description=${state.templateDescription}
+            onOpenChange=${(previewOpen) => patch({previewOpen})}
+          />
+        </${Theme}>`;
+      }
+
+      createRoot(document.getElementById("root")).render(h`<${App} />`);
+    </script>
+  </body>
+</html>
