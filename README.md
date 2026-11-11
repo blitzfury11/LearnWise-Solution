@@ -20,9 +20,10 @@ The student speaks every turn, types every turn, or switches midway. Switching k
 
 ## How to run the prototype
 
+The stylesheets are already in the repo. From the repo root:
+
 ```bash
-npm install
 npx serve .
 ```
 
-Open `http://localhost:3000/direction-b.html`. React loads from the network. The stylesheets are in `node_modules`.
+Open `http://localhost:3000/direction-b.html`. The page needs a network connection for React and the font.
